@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const db = require('./database');
@@ -35,9 +36,9 @@ app.get('/api/stok/fefo/:kode_barang', (req, res) => {
     });
 });
 
-// Route Halaman Utama
+// Route Halaman Utama (Sajikan Web Dashboard)
 app.get('/', (req, res) => {
-    res.send('API Pergudangan Rumah Sakit Berhasil Berjalan!');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // 4. Endpoint Transaksi Barang Masuk (Penerimaan dari Supplier)
