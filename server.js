@@ -175,6 +175,8 @@ app.post('/api/stok/keluar', (req, res) => {
         });
     });
 });
+
+
 // 9. Endpoint Retur Barang (Rusak / Kedaluwarsa)
 app.post('/api/stok/retur', (req, res) => {
     const { unit_id, kode_barang, no_batch, qty, alasan, keterangan } = req.body;
@@ -204,6 +206,27 @@ app.post('/api/stok/retur', (req, res) => {
         });
     });
 });
+// 10. Endpoint Edit Master Barang
+app.put('/api/barang/:kode_barang', (req, res) => {
+    const { kode_barang } = req.params;
+    const { nama, jenis, satuan, stok_minimum } = req.body;
+    const sql = `UPDATE barang SET nama = ?, jenis = ?, satuan = ?, stok_minimum = ? WHERE kode_barang = ?`;
+    db.run(sql, [nama, jenis, satuan, stok_minimum, kode_barang], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: "Master barang berhasil diperbarui!" });
+    });
+});
+
+// 11. Endpoint Hapus Master Barang
+app.delete('/api/barang/:kode_barang', (req, res) => {
+    const { kode_barang } = req.params;
+    const sql = `DELETE FROM barang WHERE kode_barang = ?`;
+    db.run(sql, [kode_barang], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: "Master barang berhasil dihapus!" });
+    });
+});
+
 if (!process.env.VERCEL) {
     const PORT = 3000;
     app.listen(PORT, () => {

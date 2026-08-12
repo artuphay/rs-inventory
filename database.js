@@ -60,6 +60,31 @@ const db = {
                 .sort((a, b) => new Date(a.tgl_expired) - new Date(b.tgl_expired));
             return callback(null, result);
         }
+        // Update Master Barang
+        if (sql.includes('UPDATE barang SET')) {
+            const [nama, jenis, satuan, stok_minimum, kode_barang] = params;
+            const item = barangList.find(b => b.kode_barang === kode_barang);
+            if (item) {
+                item.nama = nama;
+                item.jenis = jenis;
+                item.satuan = satuan;
+                item.stok_minimum = stok_minimum;
+            }
+            if (callback) callback(null);
+            return;
+        }
+
+        // Delete Master Barang
+        if (sql.includes('DELETE FROM barang')) {
+            const [kode_barang] = params;
+            const idx = barangList.findIndex(b => b.kode_barang === kode_barang);
+            if (idx >= 0) barangList.splice(idx, 1);
+            for (let i = batchList.length - 1; i >= 0; i--) {
+                if (batchList[i].kode_barang === kode_barang) batchList.splice(i, 1);
+            }
+            if (callback) callback(null);
+            return;
+        }
 
         // Default: pencarian batch bertahap untuk FEFO keluar
         if (sql.includes('FROM barang_batch')) {
