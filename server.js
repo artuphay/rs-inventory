@@ -175,9 +175,12 @@ app.post('/api/stok/keluar', (req, res) => {
     });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+    const PORT = 3000;
+    app.listen(PORT, () => {
+        console.log(`Server berjalan di http://localhost:${PORT}`);
+    });
+}
 
+module.exports = app;
 module.exports = app;
