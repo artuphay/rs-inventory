@@ -106,6 +106,13 @@ const db = {
             return;
         }
 
+        // Tambahkan pencarian batch spesifik untuk retur
+if (sql.includes('WHERE unit_id = ? AND kode_barang = ? AND no_batch = ?')) {
+    const [unitId, kode, noBatch] = params;
+    const result = batchList.filter(b => b.unit_id === unitId && b.kode_barang === kode && b.no_batch === noBatch);
+    return callback(null, result);
+}
+
         // Update Saldo (Potong Stok)
         if (sql.includes('UPDATE barang_batch SET saldo = saldo -')) {
             const [potong, id] = params;

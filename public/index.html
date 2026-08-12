@@ -176,7 +176,48 @@
             </div>
         </div>
     </div>
-
+<!-- FORM RETUR BARANG (RUSAK / KEDALUWARSA) -->
+<div class="card shadow-sm mb-4 border-warning">
+    <div class="card-header bg-warning text-dark font-weight-bold">
+        <h5 class="m-0">🔄 Form Retur Barang (Rusak / Kedaluwarsa)</h5>
+    </div>
+    <div class="card-body">
+        <form id="form-retur" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Pilih Obat/Alkes</label>
+                <select id="retur-barang" class="form-select" required></select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Lokasi Depo/Unit</label>
+                <select id="retur-unit" class="form-select" required>
+                    <option value="G01">Gudang Utama (G01)</option>
+                    <option value="D01">Depo Rawat Jalan (D01)</option>
+                    <option value="D02">Depo Rawat Inap (D02)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">No. Batch</label>
+                <input type="text" id="retur-batch" class="form-control" placeholder="Contoh: BATCH-01" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Alasan Retur</label>
+                <select id="retur-alasan" class="form-select" required>
+                    <option value="Kedaluwarsa">Kedaluwarsa (Expired)</option>
+                    <option value="Kemasan Rusak">Kemasan Rusak / Cacat</option>
+                    <option value="Mutu Menurun">Penurunan Mutu / Fisik</option>
+                    <option value="Lainnya">Lain-lain</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Jumlah (Qty)</label>
+                <input type="number" id="retur-qty" class="form-control" min="1" placeholder="1" required>
+            </div>
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-warning text-dark font-weight-bold">Proses Retur Barang</button>
+            </div>
+        </form>
+    </div>
+</div>
     <script>
         function getExpiredBadge(tglExpiredStr) {
             const today = new Date();
@@ -193,6 +234,33 @@
                 return `<span class="badge bg-success">${tglExpiredStr} 🟢</span>`;
             }
         }
+        // Submit Form Retur Barang
+document.getElementById('form-retur').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = {
+        kode_barang: document.getElementById('retur-barang').value,
+        unit_id: document.getElementById('retur-unit').value,
+        no_batch: document.getElementById('retur-batch').value,
+        alasan: document.getElementById('retur-alasan').value,
+        qty: parseInt(document.getElementById('retur-qty').value)
+    };
+
+    fetch('/api/stok/retur', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.error) {
+            alert('Error: ' + res.error);
+        } else {
+            alert(res.message);
+            loadStokGudang();
+            document.getElementById('form-retur').reset();
+        }
+    });
+});
 
         function loadMasterBarang() {
             fetch('/api/barang')
@@ -201,6 +269,7 @@
                     const tbody = document.getElementById('tabel-barang');
                     const selectMasuk = document.getElementById('select-barang');
                     const selectKeluar = document.getElementById('keluar-barang');
+                    document.getElementById('retur-barang').innerHTML = optionsHtml;
 
                     tbody.innerHTML = result.data.map(item => `
                         <tr>

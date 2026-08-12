@@ -175,7 +175,35 @@ app.post('/api/stok/keluar', (req, res) => {
         });
     });
 });
+// 9. Endpoint Retur Barang (Rusak / Kedaluwarsa)
+app.post('/api/stok/retur', (req, res) => {
+    const { unit_id, kode_barang, no_batch, qty, alasan, keterangan } = req.body;
+    const qtyRetur = parseInt(qty);
 
+    const sqlCheck = `SELECT id, saldo FROM barang_batch WHERE unit_id = ? AND kode_barang = ? AND no_batch = ?`;
+    
+    db.all(sqlCheck, [unit_id, kode_barang, no_batch], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!rows || rows.length === 0) {
+            return res.status(400).json({ error: `Batch '${no_batch}' tidak ditemukan pada unit ini!` });
+        }
+
+        const batch = rows[0];
+        if (batch.saldo < qtyRetur) {
+            return res.status(400).json({ error: `Jumlah retur (${qtyRetur}) melebihi saldo batch saat ini (${batch.saldo})!` });
+        }
+
+        // Potong stok batch karena retur
+        const sqlUpdate = `UPDATE barang_batch SET saldo = saldo - ? WHERE id = ?`;
+        db.run(sqlUpdate, [qtyRetur, batch.id], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+
+            res.json({ 
+                message: `Retur barang (${alasan}) berhasil! Stok batch '${no_batch}' dipotong sebanyak ${qtyRetur}.` 
+            });
+        });
+    });
+});
 if (!process.env.VERCEL) {
     const PORT = 3000;
     app.listen(PORT, () => {
