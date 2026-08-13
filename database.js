@@ -116,22 +116,8 @@ const db = {
         }
         const store = loadStore();
 
-        // Insert Barang Baru
-        if (sql.includes('INSERT INTO barang')) {
-            const [kode_barang, nama, jenis, satuan, stok_minimum] = params;
-            const idx = store.barangList.findIndex(b => b.kode_barang === kode_barang);
-            if (idx >= 0) {
-                store.barangList[idx] = { kode_barang, nama, jenis, satuan, stok_minimum: Number(stok_minimum) };
-            } else {
-                store.barangList.push({ kode_barang, nama, jenis, satuan, stok_minimum: Number(stok_minimum) });
-            }
-            saveStore(store);
-            if (callback) callback(null);
-            return;
-        }
-
-        // Insert / Restok Batch
-        if (sql.includes('barang_batch') && (sql.includes('INSERT') || sql.includes('VALUES'))) {
+        // 1. CEK RESTOK BATCH LEBIH DAHULU (PENTING: Mencegah bentrokan nama tabel)
+        if (sql.includes('barang_batch') && (sql.includes('INSERT') || sql.includes('VALUES') || sql.includes('ON CONFLICT'))) {
             const [unit_id, kode_barang, no_batch, tgl_expired, qty] = params;
             const numQty = parseInt(qty) || 0;
             const existing = store.batchList.find(b => b.unit_id === unit_id && b.kode_barang === kode_barang && b.no_batch === no_batch);
@@ -140,6 +126,20 @@ const db = {
                 existing.tgl_expired = tgl_expired;
             } else {
                 store.batchList.push({ id: store.nextBatchId++, unit_id, kode_barang, no_batch, tgl_expired, saldo: numQty });
+            }
+            saveStore(store);
+            if (callback) callback(null);
+            return;
+        }
+
+        // 2. Insert Master Barang Baru
+        if (sql.includes('INSERT INTO barang ') || sql.includes('INSERT INTO barang(')) {
+            const [kode_barang, nama, jenis, satuan, stok_minimum] = params;
+            const idx = store.barangList.findIndex(b => b.kode_barang === kode_barang);
+            if (idx >= 0) {
+                store.barangList[idx] = { kode_barang, nama, jenis, satuan, stok_minimum: Number(stok_minimum) };
+            } else {
+                store.barangList.push({ kode_barang, nama, jenis, satuan, stok_minimum: Number(stok_minimum) });
             }
             saveStore(store);
             if (callback) callback(null);
