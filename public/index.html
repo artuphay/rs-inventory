@@ -583,6 +583,7 @@
         });
 
         // Submit Restok Masuk
+       // Submit Restok Masuk
         document.getElementById('form-restok').addEventListener('submit', function(e) {
             e.preventDefault();
             const selectedUnit = document.getElementById('select-unit').value;
@@ -602,16 +603,16 @@
             .then(res => res.json())
             .then(res => {
                 alert(res.message);
+                // Setel unit pada filter tabel agar sesuai dengan unit tempat barang dimasukkan
                 document.getElementById('filter-unit').value = selectedUnit;
                 loadStokGudang();
                 document.getElementById('form-restok').reset();
                 
-                // Switch back to Stok Tab to show updated data
+                // Kembali ke Tab Dashboard Stok untuk langsung melihat perubahan data
                 const stokTab = new bootstrap.Tab(document.getElementById('tab-stok-link'));
                 stokTab.show();
             });
         });
-
         // Submit Barang Keluar (FEFO)
         document.getElementById('form-keluar').addEventListener('submit', function(e) {
             e.preventDefault();
