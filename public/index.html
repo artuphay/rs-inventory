@@ -4,118 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Pergudangan Rumah Sakit</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Library Barcode / QR Code Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            font-weight: 600;
+        }
+        .nav-pills .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+        .card-stat {
+            border-left: 4px solid;
+        }
+    </style>
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-primary mb-4">
+    <!-- NAVBAR ATAS -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">🏥 Sistem Inventaris & Pergudangan RS</span>
+            <a class="navbar-brand d-flex align-items-center fw-bold" href="#">
+                <i class="bi bi-hospital fs-3 text-primary me-2"></i>
+                <span>RS SIM-PERSERDIAAN</span>
+            </a>
+            <span class="navbar-text text-white-50 small">
+                Sistem Informasi Inventory & FEFO Depo Farmasi
+            </span>
         </div>
     </nav>
 
     <div class="container">
-        <!-- FORM TAMBAH MASTER BARANG BARU -->
-        <div class="card shadow-sm mb-4 border-primary">
-            <div class="card-header bg-primary text-white">
-                <h5 class="m-0">📝 Form Tambah Master Katalog Obat / Alkes Baru</h5>
+        <!-- STATISTIK KARTU UTAMA -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6">
+                <div class="card shadow-sm card-stat border-primary bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Total Jenis Obat</div>
+                            <h3 class="fw-bold mb-0 text-primary" id="stat-total-obat">0</h3>
+                        </div>
+                        <i class="bi bi-capsule fs-1 text-primary opacity-50"></i>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="form-master-barang" class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">Kode Barang</label>
-                        <input type="text" id="master-kode" class="form-control" placeholder="OBT003" required>
+            <div class="col-md-3 col-6">
+                <div class="card shadow-sm card-stat border-success bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Total Stok Fisik</div>
+                            <h3 class="fw-bold mb-0 text-success" id="stat-total-stok">0</h3>
+                        </div>
+                        <i class="bi bi-boxes fs-1 text-success opacity-50"></i>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Nama Obat / Alkes</label>
-                        <input type="text" id="master-nama" class="form-control" placeholder="Contoh: Vitamin C 500mg" required>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Jenis</label>
-                        <select id="master-jenis" class="form-select" required>
-                            <option value="Obat Bebas">Obat Bebas</option>
-                            <option value="Obat Keras">Obat Keras</option>
-                            <option value="Obat Bebas Terbatas">Obat Bebas Terbatas</option>
-                            <option value="Alkes">Alkes</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Satuan</label>
-                        <input type="text" id="master-satuan" class="form-control" placeholder="Tablet/Botol" required>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Stok Minimum</label>
-                        <input type="number" id="master-stok-min" class="form-control" min="0" value="10" required>
-                    </div>
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-primary">Simpan Master Barang</button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
-
-        <!-- FORM RETUR BARANG (RUSAK / KEDALUWARSA) -->
-        <div class="card shadow-sm mb-4 border-warning">
-            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                <h5 class="m-0 font-weight-bold">🔄 Form Retur Barang (Rusak / Kedaluwarsa)</h5>
-                <button type="button" class="btn btn-dark btn-sm" onclick="startScanner('retur')">📷 Scan Barcode / QR</button>
+            <div class="col-md-3 col-6">
+                <div class="card shadow-sm card-stat border-warning bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Hampir ED (&lt; 180 Hari)</div>
+                            <h3 class="fw-bold mb-0 text-warning" id="stat-hampir-ed">0</h3>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-1 text-warning opacity-50"></i>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="form-retur" class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Pilih Obat/Alkes</label>
-                        <select id="retur-barang" class="form-select" required></select>
+            <div class="col-md-3 col-6">
+                <div class="card shadow-sm card-stat border-info bg-white p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Unit Aktif</div>
+                            <h5 class="fw-bold mb-0 text-info" id="stat-unit">Gudang Utama</h5>
+                        </div>
+                        <i class="bi bi-building fs-1 text-info opacity-50"></i>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Lokasi Depo/Unit</label>
-                        <select id="retur-unit" class="form-select" required>
-                            <option value="G01">Gudang Utama (G01)</option>
-                            <option value="D01">Depo Rawat Jalan (D01)</option>
-                            <option value="D02">Depo Rawat Inap (D02)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">No. Batch</label>
-                        <input type="text" id="retur-batch" class="form-control" placeholder="Contoh: BATCH-01" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Alasan Retur</label>
-                        <select id="retur-alasan" class="form-select" required>
-                            <option value="Kedaluwarsa">Kedaluwarsa (Expired)</option>
-                            <option value="Kemasan Rusak">Kemasan Rusak / Cacat</option>
-                            <option value="Penurunan Mutu">Penurunan Mutu / Fisik</option>
-                            <option value="Lainnya">Lain-lain</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Jumlah (Qty)</label>
-                        <input type="number" id="retur-qty" class="form-control" min="1" placeholder="1" required>
-                    </div>
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-warning text-dark font-weight-bold">Proses Retur Barang</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- FORM INPUT BARANG MASUK -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-success">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">📥 Form Barang Masuk / Restok</h5>
-                        <button type="button" class="btn btn-light btn-sm" onclick="startScanner('masuk')">📷 Scan Barcode / QR</button>
+        <!-- TAB NAVIGASI MENU -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <ul class="nav nav-pills card-header-pills" id="mainTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="tab-stok-link" data-bs-toggle="tab" data-bs-target="#tab-stok" type="button">
+                            <i class="bi bi-table me-1"></i> Dashboard Stok FEFO
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-masuk-link" data-bs-toggle="tab" data-bs-target="#tab-masuk" type="button">
+                            <i class="bi bi-box-arrow-in-down me-1 text-success"></i> Barang Masuk (Restok)
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-keluar-link" data-bs-toggle="tab" data-bs-target="#tab-keluar" type="button">
+                            <i class="bi bi-box-arrow-up me-1 text-danger"></i> Barang Keluar (FEFO)
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-retur-link" data-bs-toggle="tab" data-bs-target="#tab-retur" type="button">
+                            <i class="bi bi-arrow-counterclockwise me-1 text-warning"></i> Retur Barang
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-master-link" data-bs-toggle="tab" data-bs-target="#tab-master" type="button">
+                            <i class="bi bi-journal-medical me-1 text-primary"></i> Master Katalog Obat
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content" id="mainTabContent">
+                    
+                    <!-- TAB 1: DASHBOARD STOK -->
+                    <div class="tab-pane fade show active" id="tab-stok" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="fw-bold me-1">Pilih Unit/Depo:</label>
+                                <select id="filter-unit" class="form-select form-select-sm w-auto" onchange="loadStokGudang()">
+                                    <option value="G01">Gudang Utama Farmasi (G01)</option>
+                                    <option value="D01">Depo Rawat Jalan (D01)</option>
+                                    <option value="D02">Depo Rawat Inap (D02)</option>
+                                </select>
+                            </div>
+                            <div class="w-25">
+                                <input type="text" id="search-stok" class="form-control form-control-sm" placeholder="🔍 Cari nama obat / batch..." onkeyup="filterStokTable()">
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nama Obat / Alkes</th>
+                                        <th>No. Batch</th>
+                                        <th>Tanggal Kedaluwarsa</th>
+                                        <th>Status Saldo Stok</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabel-stok">
+                                    <tr><td colspan="4" class="text-center">Memuat data...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="card-body">
+
+                    <!-- TAB 2: BARANG MASUK / RESTOK -->
+                    <div class="tab-pane fade" id="tab-masuk" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-success fw-bold m-0"><i class="bi bi-box-arrow-in-down me-2"></i>Form Input Barang Masuk / Restok Batch</h5>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="startScanner('masuk')">
+                                <i class="bi bi-qr-code-scan me-1"></i> Scan Barcode / QR
+                            </button>
+                        </div>
                         <form id="form-restok" class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Pilih Obat/Alkes</label>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Pilih Obat/Alkes</label>
                                 <select id="select-barang" class="form-select" required></select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Lokasi Depo/Unit</label>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Lokasi Depo/Unit Penerima</label>
                                 <select id="select-unit" class="form-select" required>
                                     <option value="G01">Gudang Utama (G01)</option>
                                     <option value="D01">Depo Rawat Jalan (D01)</option>
@@ -123,121 +177,176 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">No. Batch</label>
-                                <input type="text" id="input-batch" class="form-control" placeholder="BATCH-01" required>
+                                <label class="form-label fw-bold">Nomor Batch</label>
+                                <input type="text" id="input-batch" class="form-control" placeholder="Contoh: BATCH-2026-01" required>
                             </div>
-                            <div class="col-md-5">
-                                <label class="form-label">Tgl Kedaluwarsa</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tanggal Kedaluwarsa (ED)</label>
                                 <input type="date" id="input-expired" class="form-control" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Jumlah</label>
-                                <input type="number" id="input-qty" class="form-control" min="1" placeholder="10" required>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Jumlah Masuk (Qty)</label>
+                                <input type="number" id="input-qty" class="form-control" min="1" placeholder="Masukkan jumlah" required>
                             </div>
-                            <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-success">Simpan Barang Masuk</button>
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-success px-4"><i class="bi bi-check-circle me-1"></i> Simpan Transaksi Masuk</button>
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
 
-            <!-- FORM INPUT BARANG KELUAR (FEFO) -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-danger">
-                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">📤 Form Barang Keluar (Otomatis FEFO)</h5>
-                        <button type="button" class="btn btn-light btn-sm" onclick="startScanner('keluar')">📷 Scan Barcode / QR</button>
-                    </div>
-                    <div class="card-body">
+                    <!-- TAB 3: BARANG KELUAR (FEFO) -->
+                    <div class="tab-pane fade" id="tab-keluar" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-danger fw-bold m-0"><i class="bi bi-box-arrow-up me-2"></i>Form Pengeluaran Obat (Otomatis FEFO)</h5>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="startScanner('keluar')">
+                                <i class="bi bi-qr-code-scan me-1"></i> Scan Barcode / QR
+                            </button>
+                        </div>
                         <form id="form-keluar" class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Pilih Obat/Alkes</label>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Pilih Obat/Alkes</label>
                                 <select id="keluar-barang" class="form-select" required></select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Dari Depo/Unit</label>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Dari Depo/Unit</label>
                                 <select id="keluar-unit" class="form-select" required>
                                     <option value="G01">Gudang Utama (G01)</option>
                                     <option value="D01">Depo Rawat Jalan (D01)</option>
                                     <option value="D02">Depo Rawat Inap (D02)</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Jumlah Keluar (Qty)</label>
-                                <input type="number" id="keluar-qty" class="form-control" min="1" placeholder="10" required>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Jumlah Keluar (Qty)</label>
+                                <input type="number" id="keluar-qty" class="form-control" min="1" placeholder="Masukkan jumlah" required>
                             </div>
-                            <div class="col-md-6 d-flex align-items-end">
-                                <button type="submit" class="btn btn-danger w-100">Proses Pengeluaran</button>
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-danger px-4"><i class="bi bi-box-arrow-right me-1"></i> Proses Pengeluaran (FEFO)</button>
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row">
-            <!-- TABEL MASTER OBAT -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white font-weight-bold">
-                        <h5 class="m-0">📋 Master Katalog Obat & Alkes</h5>
+                    <!-- TAB 4: RETUR BARANG -->
+                    <div class="tab-pane fade" id="tab-retur" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-warning text-dark fw-bold m-0"><i class="bi bi-arrow-counterclockwise me-2"></i>Form Retur Barang (Rusak / Expired)</h5>
+                            <button type="button" class="btn btn-outline-dark btn-sm" onclick="startScanner('retur')">
+                                <i class="bi bi-qr-code-scan me-1"></i> Scan Barcode / QR
+                            </button>
+                        </div>
+                        <form id="form-retur" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Pilih Obat/Alkes</label>
+                                <select id="retur-barang" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Lokasi Unit</label>
+                                <select id="retur-unit" class="form-select" required>
+                                    <option value="G01">Gudang Utama (G01)</option>
+                                    <option value="D01">Depo Rawat Jalan (D01)</option>
+                                    <option value="D02">Depo Rawat Inap (D02)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">No. Batch</label>
+                                <input type="text" id="retur-batch" class="form-control" placeholder="BATCH-01" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Alasan Retur</label>
+                                <select id="retur-alasan" class="form-select" required>
+                                    <option value="Kedaluwarsa">Kedaluwarsa (Expired)</option>
+                                    <option value="Kemasan Rusak">Kemasan Rusak / Cacat</option>
+                                    <option value="Penurunan Mutu">Penurunan Mutu / Fisik</option>
+                                    <option value="Lainnya">Lain-lain</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Jumlah (Qty)</label>
+                                <input type="number" id="retur-qty" class="form-control" min="1" placeholder="1" required>
+                            </div>
+                            <div class="col-12 text-end mt-4">
+                                <button type="submit" class="btn btn-warning px-4 fw-bold"><i class="bi bi-check-square me-1"></i> Proses Retur Barang</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="card-body">
-                        <table class="table table-bordered table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Kode</th>
-                                    <th>Nama Barang</th>
-                                    <th>Satuan</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabel-barang">
-                                <tr><td colspan="4" class="text-center">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
-            <!-- TABEL STOK GUDANG UTAMA + FEFO ALERTS -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white font-weight-bold d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">📦 Stok Gudang Utama (G01) - FEFO & Alerts</h5>
+                    <!-- TAB 5: MASTER KATALOG -->
+                    <div class="tab-pane fade" id="tab-master" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                <div class="card border-primary shadow-sm">
+                                    <div class="card-header bg-primary text-white font-weight-bold">
+                                        <i class="bi bi-plus-circle me-1"></i> Form Tambah Master Obat
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="form-master-barang" class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Kode Barang</label>
+                                                <input type="text" id="master-kode" class="form-control form-control-sm" placeholder="OBT003" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Nama Obat / Alkes</label>
+                                                <input type="text" id="master-nama" class="form-control form-control-sm" placeholder="Vitamin C 500mg" required>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Jenis</label>
+                                                <select id="master-jenis" class="form-select form-select-sm" required>
+                                                    <option value="Obat Bebas">Obat Bebas</option>
+                                                    <option value="Obat Keras">Obat Keras</option>
+                                                    <option value="Alkes">Alkes</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Satuan</label>
+                                                <input type="text" id="master-satuan" class="form-control form-control-sm" placeholder="Tablet/Botol" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Stok Minimum</label>
+                                                <input type="number" id="master-stok-min" class="form-control form-control-sm" min="0" value="10" required>
+                                            </div>
+                                            <div class="col-12 text-end mt-3">
+                                                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-save me-1"></i> Simpan Master Barang</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Kode</th>
+                                                <th>Nama Barang</th>
+                                                <th>Satuan</th>
+                                                <th class="text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabel-barang">
+                                            <tr><td colspan="4" class="text-center">Memuat data...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <table class="table table-bordered table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nama Obat</th>
-                                    <th>No. Batch</th>
-                                    <th>Status Expired Date</th>
-                                    <th>Saldo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabel-stok">
-                                <tr><td colspan="4" class="text-center">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL SCANNER BARCODE / QR CODE -->
-    <div class="modal fade" id="scannerModal" tabindex="-1" aria-labelledby="scannerModalLabel" aria-hidden="true">
+    <div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="scannerModalLabel">📷 Scan Barcode / QR Code</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopScanner()"></button>
+            <h5 class="modal-title"><i class="bi bi-camera me-2"></i>Scan Barcode / QR Code</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopScanner()"></button>
           </div>
           <div class="modal-body text-center">
             <div id="reader" style="width: 100%;"></div>
-            <p class="text-muted mt-2 mb-0">Arahkan kamera ke Barcode / QR Code pada kemasan obat</p>
+            <p class="text-muted mt-2 mb-0 small">Arahkan kamera ke Barcode / QR Code kemasan obat</p>
           </div>
         </div>
       </div>
@@ -246,6 +355,7 @@
     <script>
         let html5QrcodeScanner = null;
         let currentScanTarget = 'masuk';
+        let rawStokData = [];
 
         function startScanner(target) {
             currentScanTarget = target;
@@ -269,10 +379,6 @@
             ).catch(err => {
                 alert("Gagal membuka kamera: " + err);
             });
-
-            modalElement.addEventListener('hidden.bs.modal', function () {
-                stopScanner();
-            });
         }
 
         function stopScanner() {
@@ -295,21 +401,16 @@
 
         function fillScanData(kodeBarang, noBatch = '', tglExpired = '') {
             if (currentScanTarget === 'masuk') {
-                const select = document.getElementById('select-barang');
-                select.value = kodeBarang;
+                document.getElementById('select-barang').value = kodeBarang;
                 if (noBatch) document.getElementById('input-batch').value = noBatch;
                 if (tglExpired) document.getElementById('input-expired').value = tglExpired;
-                alert(`Scan Berhasil! Kode Obat: ${kodeBarang}`);
             } else if (currentScanTarget === 'keluar') {
-                const select = document.getElementById('keluar-barang');
-                select.value = kodeBarang;
-                alert(`Scan Berhasil! Kode Obat: ${kodeBarang}`);
+                document.getElementById('keluar-barang').value = kodeBarang;
             } else if (currentScanTarget === 'retur') {
-                const select = document.getElementById('retur-barang');
-                select.value = kodeBarang;
+                document.getElementById('retur-barang').value = kodeBarang;
                 if (noBatch) document.getElementById('retur-batch').value = noBatch;
-                alert(`Scan Berhasil! Kode Obat: ${kodeBarang}`);
             }
+            alert(`Scan Berhasil! Kode Obat: ${kodeBarang}`);
         }
 
         function getExpiredBadge(tglExpiredStr) {
@@ -328,53 +429,87 @@
             }
         }
 
+        function updateStatCards(stokList) {
+            let totalStok = 0;
+            let hampirEd = 0;
+            const today = new Date();
+
+            stokList.forEach(item => {
+                totalStok += Number(item.saldo);
+                const expDate = new Date(item.tgl_expired);
+                const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 180) hampirEd++;
+            });
+
+            document.getElementById('stat-total-stok').innerText = totalStok;
+            document.getElementById('stat-hampir-ed').innerText = hampirEd;
+
+            const unitSelect = document.getElementById('filter-unit');
+            document.getElementById('stat-unit').innerText = unitSelect.options[unitSelect.selectedIndex].text.split('(')[0];
+        }
+
+        function renderStokTable(data) {
+            const tbody = document.getElementById('tabel-stok');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Tidak ada stok tersisa pada unit ini.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td class="fw-bold">${item.nama}</td>
+                    <td><code>${item.no_batch}</code></td>
+                    <td>${getExpiredBadge(item.tgl_expired)}</td>
+                    <td><span class="badge bg-secondary fs-6">${item.saldo}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function loadStokGudang() {
+            const unitId = document.getElementById('filter-unit').value;
+            fetch('/api/stok/unit/' + unitId)
+                .then(res => res.json())
+                .then(result => {
+                    rawStokData = result.data || [];
+                    renderStokTable(rawStokData);
+                    updateStatCards(rawStokData);
+                });
+        }
+
+        function filterStokTable() {
+            const query = document.getElementById('search-stok').value.toLowerCase();
+            const filtered = rawStokData.filter(item => 
+                item.nama.toLowerCase().includes(query) || 
+                item.no_batch.toLowerCase().includes(query)
+            );
+            renderStokTable(filtered);
+        }
+
         function loadMasterBarang() {
             fetch('/api/barang')
                 .then(res => res.json())
                 .then(result => {
-                    const tbody = document.getElementById('tabel-barang');
-                    const selectMasuk = document.getElementById('select-barang');
-                    const selectKeluar = document.getElementById('keluar-barang');
-                    const selectRetur = document.getElementById('retur-barang');
+                    const data = result.data || [];
+                    document.getElementById('stat-total-obat').innerText = data.length;
 
-                    tbody.innerHTML = result.data.map(item => `
+                    const tbody = document.getElementById('tabel-barang');
+                    tbody.innerHTML = data.map(item => `
                         <tr>
                             <td><code>${item.kode_barang}</code></td>
                             <td>${item.nama}</td>
                             <td>${item.satuan}</td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editBarang('${item.kode_barang}', '${item.nama}', '${item.jenis}', '${item.satuan}', ${item.stok_minimum})">✏️</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="hapusBarang('${item.kode_barang}')">🗑️</button>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editBarang('${item.kode_barang}', '${item.nama}', '${item.jenis}', '${item.satuan}', ${item.stok_minimum})"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="hapusBarang('${item.kode_barang}')"><i class="bi bi-trash"></i></button>
                             </td>
                         </tr>
                     `).join('');
 
                     const optionsHtml = '<option value="">-- Pilih Barang --</option>' + 
-                        result.data.map(item => `<option value="${item.kode_barang}">${item.nama}</option>`).join('');
+                        data.map(item => `<option value="${item.kode_barang}">${item.nama}</option>`).join('');
 
-                    if (selectMasuk) selectMasuk.innerHTML = optionsHtml;
-                    if (selectKeluar) selectKeluar.innerHTML = optionsHtml;
-                    if (selectRetur) selectRetur.innerHTML = optionsHtml;
-                });
-        }
-
-        function loadStokGudang() {
-            fetch('/api/stok/unit/G01')
-                .then(res => res.json())
-                .then(result => {
-                    const tbody = document.getElementById('tabel-stok');
-                    if (result.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada stok tersisa.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = result.data.map(item => `
-                        <tr>
-                            <td>${item.nama}</td>
-                            <td><code>${item.no_batch}</code></td>
-                            <td>${getExpiredBadge(item.tgl_expired)}</td>
-                            <td><strong>${item.saldo}</strong></td>
-                        </tr>
-                    `).join('');
+                    document.getElementById('select-barang').innerHTML = optionsHtml;
+                    document.getElementById('keluar-barang').innerHTML = optionsHtml;
+                    document.getElementById('retur-barang').innerHTML = optionsHtml;
                 });
         }
 
@@ -450,9 +585,10 @@
         // Submit Restok Masuk
         document.getElementById('form-restok').addEventListener('submit', function(e) {
             e.preventDefault();
+            const selectedUnit = document.getElementById('select-unit').value;
             const data = {
                 kode_barang: document.getElementById('select-barang').value,
-                unit_id: document.getElementById('select-unit').value,
+                unit_id: selectedUnit,
                 no_batch: document.getElementById('input-batch').value,
                 tgl_expired: document.getElementById('input-expired').value,
                 qty: parseInt(document.getElementById('input-qty').value)
@@ -466,17 +602,23 @@
             .then(res => res.json())
             .then(res => {
                 alert(res.message);
+                document.getElementById('filter-unit').value = selectedUnit;
                 loadStokGudang();
                 document.getElementById('form-restok').reset();
+                
+                // Switch back to Stok Tab to show updated data
+                const stokTab = new bootstrap.Tab(document.getElementById('tab-stok-link'));
+                stokTab.show();
             });
         });
 
         // Submit Barang Keluar (FEFO)
         document.getElementById('form-keluar').addEventListener('submit', function(e) {
             e.preventDefault();
+            const selectedUnit = document.getElementById('keluar-unit').value;
             const data = {
                 kode_barang: document.getElementById('keluar-barang').value,
-                unit_id: document.getElementById('keluar-unit').value,
+                unit_id: selectedUnit,
                 qty: parseInt(document.getElementById('keluar-qty').value)
             };
 
@@ -491,8 +633,13 @@
                     alert(res.error);
                 } else {
                     alert(res.message);
+                    document.getElementById('filter-unit').value = selectedUnit;
                     loadStokGudang();
                     document.getElementById('form-keluar').reset();
+
+                    // Switch back to Stok Tab
+                    const stokTab = new bootstrap.Tab(document.getElementById('tab-stok-link'));
+                    stokTab.show();
                 }
             });
         });
@@ -500,9 +647,10 @@
         // Submit Retur Barang
         document.getElementById('form-retur').addEventListener('submit', function(e) {
             e.preventDefault();
+            const selectedUnit = document.getElementById('retur-unit').value;
             const data = {
                 kode_barang: document.getElementById('retur-barang').value,
-                unit_id: document.getElementById('retur-unit').value,
+                unit_id: selectedUnit,
                 no_batch: document.getElementById('retur-batch').value,
                 alasan: document.getElementById('retur-alasan').value,
                 qty: parseInt(document.getElementById('retur-qty').value)
@@ -519,8 +667,13 @@
                     alert(res.error);
                 } else {
                     alert(res.message);
+                    document.getElementById('filter-unit').value = selectedUnit;
                     loadStokGudang();
                     document.getElementById('form-retur').reset();
+
+                    // Switch back to Stok Tab
+                    const stokTab = new bootstrap.Tab(document.getElementById('tab-stok-link'));
+                    stokTab.show();
                 }
             });
         });

@@ -1,6 +1,6 @@
-const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./database');
 
 const app = express();
@@ -20,58 +20,34 @@ app.get('/api/barang', (req, res) => {
 app.post('/api/barang', (req, res) => {
     const { kode_barang, nama, jenis, satuan, stok_minimum } = req.body;
     const sql = `INSERT INTO barang (kode_barang, nama, jenis, satuan, stok_minimum) VALUES (?, ?, ?, ?, ?)`;
-    db.run(sql, [kode_barang, nama, jenis, satuan, stok_minimum], function(err) {
+    db.run(sql, [kode_barang, nama, jenis, satuan, parseInt(stok_minimum) || 0], function(err) {
         if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: "Barang berhasil ditambahkan", kode_barang });
+        res.json({ message: "Master barang berhasil ditambahkan!", kode_barang });
     });
 });
 
-// 3. Get Stok berdasarkan Urutan Expired (FEFO)
-app.get('/api/stok/fefo/:kode_barang', (req, res) => {
+// 3. Edit Master Barang
+app.put('/api/barang/:kode_barang', (req, res) => {
     const { kode_barang } = req.params;
-    const sql = `SELECT * FROM barang_batch WHERE kode_barang = ? AND saldo > 0 ORDER BY tgl_expired ASC`;
-    db.all(sql, [kode_barang], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ data: rows });
+    const { nama, jenis, satuan, stok_minimum } = req.body;
+    const sql = `UPDATE barang SET nama = ?, jenis = ?, satuan = ?, stok_minimum = ? WHERE kode_barang = ?`;
+    db.run(sql, [nama, jenis, satuan, parseInt(stok_minimum) || 0, kode_barang], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: "Master barang berhasil diperbarui!" });
     });
 });
 
-// Route Halaman Utama (Sajikan Web Dashboard)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// 4. Endpoint Transaksi Barang Masuk (Penerimaan dari Supplier)
-app.post('/api/transaksi/masuk', (req, res) => {
-    const { no_trx, tanggal, supplier_name, no_invoice, unit_id, items } = req.body;
-
-    db.serialize(() => {
-        // Simpan Header Transaksi
-        const stmtHeader = db.prepare(`INSERT INTO trx_masuk (no_trx, tanggal, supplier_name, no_invoice) VALUES (?, ?, ?, ?)`);
-        stmtHeader.run(no_trx, tanggal, supplier_name, no_invoice);
-        stmtHeader.finalize();
-
-        // Simpan Detail & Update/Insert Stok Batch
-        const stmtDetail = db.prepare(`INSERT INTO trx_masuk_detail (no_trx, kode_barang, no_batch, tgl_expired, qty, harga) VALUES (?, ?, ?, ?, ?, ?)`);
-        const stmtBatch = db.prepare(`
-            INSERT INTO barang_batch (unit_id, kode_barang, no_batch, tgl_expired, saldo)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(unit_id, kode_barang, no_batch) 
-            DO UPDATE SET saldo = saldo + excluded.saldo
-        `);
-
-        items.forEach(item => {
-            stmtDetail.run(no_trx, item.kode_barang, item.no_batch, item.tgl_expired, item.qty, item.harga);
-            stmtBatch.run(unit_id, item.kode_barang, item.no_batch, item.tgl_expired, item.qty);
-        });
-
-        stmtDetail.finalize();
-        stmtBatch.finalize();
-
-        res.json({ message: "Transaksi barang masuk berhasil disimpan dan stok batch diperbarui." });
+// 4. Hapus Master Barang
+app.delete('/api/barang/:kode_barang', (req, res) => {
+    const { kode_barang } = req.params;
+    const sql = `DELETE FROM barang WHERE kode_barang = ?`;
+    db.run(sql, [kode_barang], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: "Master barang berhasil dihapus!" });
     });
 });
-// 5. Cek Stok Berdasarkan Unit / Depo
+
+// 5. Get Stok Berdasarkan Unit / Depo
 app.get('/api/stok/unit/:unit_id', (req, res) => {
     const { unit_id } = req.params;
     const sql = `
@@ -83,42 +59,11 @@ app.get('/api/stok/unit/:unit_id', (req, res) => {
     `;
     db.all(sql, [unit_id], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ unit_id, data: rows });
+        res.json({ unit_id, data: rows || [] });
     });
 });
 
-// 6. Transaksi Mutasi (Pindah Stok Antar Depo/Unit)
-app.post('/api/transaksi/mutasi', (req, res) => {
-    const { no_trx, tanggal, unit_asal_id, unit_tujuan_id, items } = req.body;
-
-    db.serialize(() => {
-        // Simpan Header Mutasi
-        const stmtHeader = db.prepare(`INSERT INTO trx_pindah (no_trx, tanggal, unit_asal_id, unit_tujuan_id, status) VALUES (?, ?, ?, ?, 'COMPLETED')`);
-        stmtHeader.run(no_trx, tanggal, unit_asal_id, unit_tujuan_id);
-        stmtHeader.finalize();
-
-        // Update Stok: Kurangi dari unit_asal, Tambah ke unit_tujuan
-        const stmtKurang = db.prepare(`UPDATE barang_batch SET saldo = saldo - ? WHERE unit_id = ? AND kode_barang = ? AND no_batch = ? AND saldo >= ?`);
-        const stmtTambah = db.prepare(`
-            INSERT INTO barang_batch (unit_id, kode_barang, no_batch, tgl_expired, saldo)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(unit_id, kode_barang, no_batch) 
-            DO UPDATE SET saldo = saldo + excluded.saldo
-        `);
-
-        items.forEach(item => {
-            stmtKurang.run(item.qty, unit_asal_id, item.kode_barang, item.no_batch, item.qty);
-            stmtTambah.run(unit_tujuan_id, item.kode_barang, item.no_batch, item.tgl_expired, item.qty);
-        });
-
-        stmtKurang.finalize();
-        stmtTambah.finalize();
-
-        res.json({ message: "Mutasi barang antar depo berhasil diselesaikan." });
-    });
-});
-
-// 7. Endpoint Tambah / Restok Batch Langsung dari Form
+// 6. Restok Batch / Barang Masuk
 app.post('/api/stok/tambah', (req, res) => {
     const { unit_id, kode_barang, no_batch, tgl_expired, qty } = req.body;
     const sql = `
@@ -127,17 +72,17 @@ app.post('/api/stok/tambah', (req, res) => {
         ON CONFLICT(unit_id, kode_barang, no_batch) 
         DO UPDATE SET saldo = saldo + excluded.saldo, tgl_expired = excluded.tgl_expired
     `;
-    db.run(sql, [unit_id, kode_barang, no_batch, tgl_expired, qty], function(err) {
+    db.run(sql, [unit_id, kode_barang, no_batch, tgl_expired, parseInt(qty)], function(err) {
         if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: "Stok batch berhasil diperbarui!" });
+        res.json({ message: "Stok batch berhasil ditambahkan!", unit_id });
     });
 });
-// 8. Endpoint Barang Keluar (Otomatis Potong Stok Berdasarkan FEFO)
+
+// 7. Barang Keluar (FEFO)
 app.post('/api/stok/keluar', (req, res) => {
     const { unit_id, kode_barang, qty } = req.body;
     let qtyDibutuhkan = parseInt(qty);
 
-    // Cari batch yang punya saldo > 0, diurutkan dari tanggal expired terdekat (FEFO)
     const sqlSelect = `
         SELECT id, no_batch, tgl_expired, saldo 
         FROM barang_batch 
@@ -148,13 +93,11 @@ app.post('/api/stok/keluar', (req, res) => {
     db.all(sqlSelect, [unit_id, kode_barang], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // Hitung total saldo yang ada
-        const totalSaldo = rows.reduce((acc, b) => acc + b.saldo, 0);
+        const totalSaldo = rows.reduce((acc, b) => acc + Number(b.saldo), 0);
         if (totalSaldo < qtyDibutuhkan) {
-            return res.status(400).json({ error: `Stok tidak mencukupi! Total stok tersedia hanya ${totalSaldo}` });
+            return res.status(400).json({ error: `Stok tidak mencukupi! Stok tersedia hanya ${totalSaldo}` });
         }
 
-        // Potong stok bertahap berdasarkan urutan FEFO
         db.serialize(() => {
             let detailPotong = [];
             const stmtUpdate = db.prepare(`UPDATE barang_batch SET saldo = saldo - ? WHERE id = ?`);
@@ -162,7 +105,7 @@ app.post('/api/stok/keluar', (req, res) => {
             for (let batch of rows) {
                 if (qtyDibutuhkan <= 0) break;
 
-                let potong = Math.min(batch.saldo, qtyDibutuhkan);
+                let potong = Math.min(Number(batch.saldo), qtyDibutuhkan);
                 stmtUpdate.run(potong, batch.id);
                 qtyDibutuhkan -= potong;
                 detailPotong.push(`${batch.no_batch} (-${potong})`);
@@ -176,10 +119,9 @@ app.post('/api/stok/keluar', (req, res) => {
     });
 });
 
-
-// 9. Endpoint Retur Barang (Rusak / Kedaluwarsa)
+// 8. Retur Barang
 app.post('/api/stok/retur', (req, res) => {
-    const { unit_id, kode_barang, no_batch, qty, alasan, keterangan } = req.body;
+    const { unit_id, kode_barang, no_batch, qty, alasan } = req.body;
     const qtyRetur = parseInt(qty);
 
     const sqlCheck = `SELECT id, saldo FROM barang_batch WHERE unit_id = ? AND kode_barang = ? AND no_batch = ?`;
@@ -191,40 +133,24 @@ app.post('/api/stok/retur', (req, res) => {
         }
 
         const batch = rows[0];
-        if (batch.saldo < qtyRetur) {
-            return res.status(400).json({ error: `Jumlah retur (${qtyRetur}) melebihi saldo batch saat ini (${batch.saldo})!` });
+        if (Number(batch.saldo) < qtyRetur) {
+            return res.status(400).json({ error: `Jumlah retur (${qtyRetur}) melebihi saldo batch (${batch.saldo})!` });
         }
 
-        // Potong stok batch karena retur
         const sqlUpdate = `UPDATE barang_batch SET saldo = saldo - ? WHERE id = ?`;
         db.run(sqlUpdate, [qtyRetur, batch.id], function(err) {
             if (err) return res.status(500).json({ error: err.message });
 
             res.json({ 
-                message: `Retur barang (${alasan}) berhasil! Stok batch '${no_batch}' dipotong sebanyak ${qtyRetur}.` 
+                message: `Retur barang (${alasan}) berhasil! Stok batch '${no_batch}' berkurang sebesar ${qtyRetur}.` 
             });
         });
     });
 });
-// 10. Endpoint Edit Master Barang
-app.put('/api/barang/:kode_barang', (req, res) => {
-    const { kode_barang } = req.params;
-    const { nama, jenis, satuan, stok_minimum } = req.body;
-    const sql = `UPDATE barang SET nama = ?, jenis = ?, satuan = ?, stok_minimum = ? WHERE kode_barang = ?`;
-    db.run(sql, [nama, jenis, satuan, stok_minimum, kode_barang], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: "Master barang berhasil diperbarui!" });
-    });
-});
 
-// 11. Endpoint Hapus Master Barang
-app.delete('/api/barang/:kode_barang', (req, res) => {
-    const { kode_barang } = req.params;
-    const sql = `DELETE FROM barang WHERE kode_barang = ?`;
-    db.run(sql, [kode_barang], function(err) {
-        if (err) return res.status(400).json({ error: err.message });
-        res.json({ message: "Master barang berhasil dihapus!" });
-    });
+// Route Utama Web Dashboard
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 if (!process.env.VERCEL) {
@@ -234,5 +160,4 @@ if (!process.env.VERCEL) {
     });
 }
 
-module.exports = app;
 module.exports = app;
